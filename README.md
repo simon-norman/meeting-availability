@@ -12,6 +12,6 @@ Run `node`
 
 In node, `meetingAvailability = require('./src/meeting_availability.js')`
 
-Then call `meetingAvailability(schedules)`, passing in meeting schedules
+Then call `meetingAvailability(schedules)`, passing in meeting schedules, which will return first available time
 
 To run tests, run `npm run test`
