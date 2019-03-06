@@ -68,7 +68,10 @@ function meetingAvailability(attendeeSchedules, meetingDuration) {
 
   const suitableMeetingTime = Period.findAvailablePeriodTime({ duration: meetingDuration })
 
-  return Moment(suitableMeetingTime).format('hh:mm')
+  if (suitableMeetingTime) {
+    return Moment(suitableMeetingTime).format('hh:mm')
+  }
+  return null
 }
 
 module.exports = meetingAvailability

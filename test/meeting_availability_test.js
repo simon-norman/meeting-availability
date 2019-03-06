@@ -45,4 +45,14 @@ describe('Find available meeting time', () => {
 
     expect(meetingAvailability(schedules, 60)).equals('12:00')
   })
+
+  it('should, if no time available, return null', function () {
+    const schedules = [
+      [['09:00', '13:30'], ['13:30', '16:00'], ['16:00', '17:30'], ['17:45', '19:00']],
+      [['09:15', '12:00'], ['14:00', '16:30'], ['17:00', '17:30']],
+      [['11:30', '12:15'], ['15:00', '16:30'], ['17:45', '19:00']],
+    ]
+
+    expect(meetingAvailability(schedules, 60)).equals(null)
+  })
 })
