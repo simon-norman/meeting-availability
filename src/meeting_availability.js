@@ -1,8 +1,9 @@
 const Moment = require('moment')
+const PeriodFactory = require('./period')
 
 let appointments
 let noOfUnavailableAttendees
-let availabilityByPeriod
+let Period
 
 const scheduleDate = '2000-01-01 '
 const dayStartTime = new Date(`${scheduleDate}09:00`)
@@ -32,47 +33,35 @@ const setAvailabilityForPeriod = (appointment) => {
     noOfUnavailableAttendees -= 1
   }
 
-  availabilityByPeriod.set(appointment.time, { noOfUnavailableAttendees })
-}
-
-const setEndTimeForPrevPeriod = (endTime, prevPeriod) => {
-  const availability = availabilityByPeriod.get(prevPeriod)
-  availability.endTime = endTime
-  availabilityByPeriod.set(prevPeriod, availability)
+  return Period.createOrUpdateIfExists({ startTime: appointment.time, noOfUnavailableAttendees })
 }
 
 const calcAvailabilityByPeriod = () => {
-  availabilityByPeriod = new Map()
   noOfUnavailableAttendees = 0
-  availabilityByPeriod.set(dayStartTime, { noOfUnavailableAttendees })
-  let prevPeriod = dayStartTime
-
+  let prevPeriod
+  if (appointments[0].time > dayStartTime) {
+    prevPeriod = Period.createOrUpdateIfExists({ startTime: dayStartTime, noOfUnavailableAttendees })
+  }
   appointments.forEach((appointment) => {
-    setAvailabilityForPeriod(appointment)
+    const newPeriod = setAvailabilityForPeriod(appointment)
 
-    setEndTimeForPrevPeriod(appointment.time, prevPeriod)
-    prevPeriod = appointment.time
+    if (prevPeriod) {
+      prevPeriod.endTime = newPeriod.startTime
+      Period.updatePeriod(prevPeriod)
+    }
+    prevPeriod = newPeriod
   })
 
-  setEndTimeForPrevPeriod(dayEndTime, prevPeriod)
+  prevPeriod.endTime = dayEndTime
+  Period.updatePeriod(prevPeriod)
 }
 
-const periodDurationInSecs = (period, endTime) => {
-  const duration = endTime.valueOf() - period.valueOf()
-  return duration / 1000 / 60
-}
-
-const isTimeSuitable = (periodDuration, meetingTime, availability) =>
-  periodDuration >= meetingTime && availability.noOfUnavailableAttendees <= 0
-
-const findSuitableMeetingTime = (meetingTime) => {
+const findSuitableMeetingTime = (meetingDuration) => {
   let suitableMeetingTime
 
-  for (const [period, availability] of availabilityByPeriod) {
-    const periodDuration = periodDurationInSecs(period, availability.endTime)
-
-    if (isTimeSuitable(periodDuration, meetingTime, availability)) {
-      suitableMeetingTime = period
+  for (const period of Period.all()) {
+    if (period.isTimeSuitable({ meetingDuration })) {
+      suitableMeetingTime = period.startTime
       break
     }
   }
@@ -80,7 +69,8 @@ const findSuitableMeetingTime = (meetingTime) => {
   return suitableMeetingTime
 }
 
-function meetingAvailability(attendeeSchedules, meetingTime) {
+function meetingAvailability(attendeeSchedules, meetingDuration) {
+  Period = PeriodFactory()
   appointments = []
   attendeeSchedules.forEach((schedule) => {
     extractAppointmentsFromScheduleToArray(schedule)
@@ -90,7 +80,7 @@ function meetingAvailability(attendeeSchedules, meetingTime) {
 
   calcAvailabilityByPeriod()
 
-  const suitableMeetingTime = findSuitableMeetingTime(meetingTime)
+  const suitableMeetingTime = findSuitableMeetingTime(meetingDuration)
 
   return Moment(suitableMeetingTime).format('hh:mm')
 }
