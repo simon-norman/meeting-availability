@@ -41,6 +41,15 @@ module.exports = () => {
       return periods
     }
 
+    static findAvailableMeetingTime({ meetingDuration }) {
+      for (const period of Period.all()) {
+        if (period.isTimeSuitable({ meetingDuration })) {
+          return period.startTime
+        }
+      }
+      return null
+    }
+
     durationInMins() {
       const duration = this.endTime.valueOf() - this.startTime.valueOf()
       return duration / 1000 / 60

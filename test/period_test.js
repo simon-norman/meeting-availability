@@ -61,6 +61,26 @@ describe('Find available meeting time', () => {
           expect(period.isTimeSuitable({ meetingDuration: 1 })).equals(true)
         })
       })
+
+      describe('When find available period is called on Period with a meeting time', function () {
+        context('Given there is an available period for that time', function () {
+          it('should return that period', function () {
+            const period2 = Period.createOrUpdateIfExists({
+              startTime: new Date('2000-01-01 10:02'),
+              endTime: new Date('2000-01-01 10:12'),
+              noOfUnavailableAttendees: 0,
+            })
+
+            expect(Period.findAvailableMeetingTime({ meetingDuration: 10 })).equals(period2.startTime)
+          })
+        })
+
+        context('Given there is no available period for that time', function () {
+          it('should return null', function () {
+            expect(Period.findAvailableMeetingTime({ meetingDuration: 10 })).equals(null)
+          })
+        })
+      })
     })
   })
 

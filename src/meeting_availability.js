@@ -56,19 +56,6 @@ const calcAvailabilityByPeriod = () => {
   Period.updatePeriod(prevPeriod)
 }
 
-const findSuitableMeetingTime = (meetingDuration) => {
-  let suitableMeetingTime
-
-  for (const period of Period.all()) {
-    if (period.isTimeSuitable({ meetingDuration })) {
-      suitableMeetingTime = period.startTime
-      break
-    }
-  }
-
-  return suitableMeetingTime
-}
-
 function meetingAvailability(attendeeSchedules, meetingDuration) {
   Period = PeriodFactory()
   appointments = []
@@ -80,7 +67,7 @@ function meetingAvailability(attendeeSchedules, meetingDuration) {
 
   calcAvailabilityByPeriod()
 
-  const suitableMeetingTime = findSuitableMeetingTime(meetingDuration)
+  const suitableMeetingTime = Period.findAvailableMeetingTime({ meetingDuration })
 
   return Moment(suitableMeetingTime).format('hh:mm')
 }
