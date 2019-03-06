@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const PeriodFactory = require('../src/period')
 
-describe('Find available meeting time', () => {
+describe('Availability of attendees over course of day', () => {
   let Period
   let period
   let startTime
