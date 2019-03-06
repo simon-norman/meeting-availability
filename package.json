@@ -5,6 +5,10 @@
   "engines": {
     "node": "^8.12.0"
   },
+  "scripts": {
+    "test": "mocha --exit",
+    "app": "node ./src/meeting_availability.js"
+  },
   "author": "Simon Norman",
   "license": "MIT",
   "devDependencies": {
