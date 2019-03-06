@@ -20,7 +20,7 @@ describe('Find available meeting time', () => {
 
     expect(meetingAvailability(schedules, 60)).equals('09:00')
   })
-  
+
   it('should return earliest available time, including if it is at the end of the day', function () {
     const schedules = [
       [['09:00', '16:00']],

@@ -46,38 +46,22 @@ describe('Find available meeting time', () => {
         })
       })
 
-      describe('When isTimeSuitable is called on a period', function () {
-        it('should return false if 1 or more attendees are uanvailable', function () {
-          expect(period.isTimeSuitable({ meetingDuration: 1 })).equals(false)
-        })
-
-        it('should return false if meeting time is more than period duration', function () {
-          period.noOfUnavailableAttendees = 0
-          expect(period.isTimeSuitable({ meetingDuration: 3 })).equals(false)
-        })
-
-        it('should return true if 0 attendees available and period duration > meeting time', function () {
-          period.noOfUnavailableAttendees = 0
-          expect(period.isTimeSuitable({ meetingDuration: 1 })).equals(true)
-        })
-      })
-
       describe('When find available period is called on Period with a meeting time', function () {
         context('Given there is an available period for that time', function () {
-          it('should return that period', function () {
+          it('should return that period start time', function () {
             const period2 = Period.createOrUpdateIfExists({
               startTime: new Date('2000-01-01 10:02'),
               endTime: new Date('2000-01-01 10:12'),
               noOfUnavailableAttendees: 0,
             })
 
-            expect(Period.findAvailableMeetingTime({ meetingDuration: 10 })).equals(period2.startTime)
+            expect(Period.findAvailablePeriodTime({ duration: 10 })).equals(period2.startTime)
           })
         })
 
         context('Given there is no available period for that time', function () {
           it('should return null', function () {
-            expect(Period.findAvailableMeetingTime({ meetingDuration: 10 })).equals(null)
+            expect(Period.findAvailablePeriodTime({ duration: 10 })).equals(null)
           })
         })
       })
@@ -86,10 +70,17 @@ describe('Find available meeting time', () => {
 
   context('Given period with a given start time was already created', function () {
     it('should update period with updated data when createOrUpdateIfExists is called', function () {
-      Period.createOrUpdateIfExists({ startTime, noOfUnavailableAttendees })
+      Period.create({ startTime, noOfUnavailableAttendees })
       Period.createOrUpdateIfExists({ startTime, noOfUnavailableAttendees: 10 })
 
       expect(Period.all()[0].noOfUnavailableAttendees).equals(10)
+    })
+
+    it('should update last added period with specified close time when addEndTimeToLastAddedPeriod called', function () {
+      Period.create({ startTime, noOfUnavailableAttendees })
+      Period.addEndTimeToLastAddedPeriod({ endTime })
+
+      expect(Period.all()[0].endTime).equals(endTime)
     })
   })
 })

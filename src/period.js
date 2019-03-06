@@ -3,30 +3,18 @@ module.exports = () => {
   const periods = []
 
   return class Period {
-    constructor({ startTime, endTime, noOfUnavailableAttendees }) {
-      this.startTime = startTime
-      this.endTime = endTime
-      this.noOfUnavailableAttendees = noOfUnavailableAttendees
-    }
-
-    static create(periodData) {
-      const period = new Period(periodData)
-      periods.push(period)
-      return period
-    }
-
-    static updatePeriod(periodData) {
-      const periodIndex = Period.findPeriodIndex(periodData.startTime)
-      periods[periodIndex] = periodData
-      return periods[periodIndex]
-    }
-
     static createOrUpdateIfExists(periodData) {
       try {
         return Period.updatePeriod(periodData)
       } catch (error) {
         return Period.create(periodData)
       }
+    }
+
+    static updatePeriod(periodData) {
+      const periodIndex = Period.findPeriodIndex(periodData.startTime)
+      periods[periodIndex] = periodData
+      return periods[periodIndex]
     }
 
     static findPeriodIndex(startTime) {
@@ -37,17 +25,36 @@ module.exports = () => {
       throw new Error('Period not found in periods')
     }
 
+
+    static create(periodData) {
+      const period = new Period(periodData)
+      periods.push(period)
+      return period
+    }
+
     static all() {
       return periods
     }
 
-    static findAvailableMeetingTime({ meetingDuration }) {
+    static addEndTimeToLastAddedPeriod({ endTime }) {
+      if (periods[periods.length - 1]) {
+        periods[periods.length - 1].endTime = endTime
+      }
+    }
+
+    static findAvailablePeriodTime({ duration }) {
       for (const period of Period.all()) {
-        if (period.isTimeSuitable({ meetingDuration })) {
+        if (period.isTimeSuitable({ duration })) {
           return period.startTime
         }
       }
       return null
+    }
+
+    constructor({ startTime, endTime, noOfUnavailableAttendees }) {
+      this.startTime = startTime
+      this.endTime = endTime
+      this.noOfUnavailableAttendees = noOfUnavailableAttendees
     }
 
     durationInMins() {
@@ -55,9 +62,9 @@ module.exports = () => {
       return duration / 1000 / 60
     }
 
-    isTimeSuitable({ meetingDuration }) {
+    isTimeSuitable({ duration }) {
       const available = this.noOfUnavailableAttendees === 0
-      const periodLongEnough = this.durationInMins() >= meetingDuration
+      const periodLongEnough = this.durationInMins() >= duration
       return available && periodLongEnough
     }
   }

@@ -1,5 +1,5 @@
 const Moment = require('moment')
-const PeriodFactory = require('./period')
+const PeriodClassFactory = require('./period')
 
 let appointments
 let noOfUnavailableAttendees
@@ -9,16 +9,16 @@ const scheduleDate = '2000-01-01 '
 const dayStartTime = new Date(`${scheduleDate}09:00`)
 const dayEndTime = new Date(`${scheduleDate}19:00`)
 
-const newAppointment = (isStartTime, time) => ({
+const newAppointment = (modifierToAvailableAttendees, time) => ({
   time: new Date(`${scheduleDate}${time}`),
-  isStartTime,
+  modifierToAvailableAttendees,
 })
 
-const extractAppointmentsFromScheduleToArray = (schedule) => {
+const extractAppointmentsFrom = (schedule) => {
   schedule.forEach(([startTime, endTime]) => {
-    appointments.push(newAppointment(true, startTime))
+    appointments.push(newAppointment(-1, startTime))
 
-    appointments.push(newAppointment(false, endTime))
+    appointments.push(newAppointment(1, endTime))
   })
 }
 
@@ -26,48 +26,47 @@ const sortAppointmentsByTimeAscending = () => {
   appointments.sort((a, b) => a.time.valueOf() - b.time.valueOf())
 }
 
-const setAvailabilityForPeriod = (appointment) => {
-  if (appointment.isStartTime) {
-    noOfUnavailableAttendees += 1
-  } else {
-    noOfUnavailableAttendees -= 1
+const createAvailablePeriodDayStartIfNoAppointmentsThen = () => {
+  if (appointments[0].time > dayStartTime) {
+    Period.create({ startTime: dayStartTime, noOfUnavailableAttendees })
   }
-
-  return Period.createOrUpdateIfExists({ startTime: appointment.time, noOfUnavailableAttendees })
 }
 
-const calcAvailabilityByPeriod = () => {
-  noOfUnavailableAttendees = 0
-  let prevPeriod
-  if (appointments[0].time > dayStartTime) {
-    prevPeriod = Period.createOrUpdateIfExists({ startTime: dayStartTime, noOfUnavailableAttendees })
-  }
-  appointments.forEach((appointment) => {
-    const newPeriod = setAvailabilityForPeriod(appointment)
+const updatePeriodAvailabilityFrom = (appointment) => {
+  Period.addEndTimeToLastAddedPeriod({ endTime: appointment.time })
 
-    if (prevPeriod) {
-      prevPeriod.endTime = newPeriod.startTime
-      Period.updatePeriod(prevPeriod)
-    }
-    prevPeriod = newPeriod
+  noOfUnavailableAttendees += appointment.modifierToAvailableAttendees
+
+  Period.createOrUpdateIfExists({
+    startTime: appointment.time,
+    noOfUnavailableAttendees,
+  })
+}
+
+const generatePeriodAvailabilityFromAppointments = () => {
+  noOfUnavailableAttendees = 0
+
+  Period = PeriodClassFactory()
+  createAvailablePeriodDayStartIfNoAppointmentsThen()
+
+  appointments.forEach((appointment) => {
+    updatePeriodAvailabilityFrom(appointment)
   })
 
-  prevPeriod.endTime = dayEndTime
-  Period.updatePeriod(prevPeriod)
+  Period.addEndTimeToLastAddedPeriod({ endTime: dayEndTime })
 }
 
 function meetingAvailability(attendeeSchedules, meetingDuration) {
-  Period = PeriodFactory()
   appointments = []
   attendeeSchedules.forEach((schedule) => {
-    extractAppointmentsFromScheduleToArray(schedule)
+    extractAppointmentsFrom(schedule)
   })
 
   sortAppointmentsByTimeAscending()
 
-  calcAvailabilityByPeriod()
+  generatePeriodAvailabilityFromAppointments()
 
-  const suitableMeetingTime = Period.findAvailableMeetingTime({ meetingDuration })
+  const suitableMeetingTime = Period.findAvailablePeriodTime({ duration: meetingDuration })
 
   return Moment(suitableMeetingTime).format('hh:mm')
 }
