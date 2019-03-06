@@ -7,7 +7,6 @@
   },
   "scripts": {
     "test": "mocha --exit",
-    "app": "node ./src/meeting_availability.js"
   },
   "author": "Simon Norman",
   "license": "MIT",
